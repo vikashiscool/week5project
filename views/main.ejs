@@ -1,0 +1,21 @@
+<html>
+<head>
+	<title></title>
+</head>
+<body>
+<h1>Welcome, <%= users.name %>!<h1>
+	
+	<h2>Step 1: What's your zip code?</h2>
+	<form method="GET" action="/results">
+		<input type="text" name="zip" placeholder="Enter your zip code here...">
+	
+		<h2>Step 2: What's your budget ($ - $$$$$$)</h2>
+		<input type="text" name="price" placeholder="How much do you want to spend">	
+		<input type="submit">
+	</form>
+
+	<a href="users/<%= users.id%>/edit">Edit profile</a>
+	<br>
+
+</body>
+</html>
