@@ -3,18 +3,17 @@
 	<title></title>
 </head>
 <body>
-<h1>Welcome, <%= users.name %>!<h1>
+<h1>Welcome, <%= user.name %>!<h1>
 	
-	<h2>Step 1: What's your zip code?</h2>
+		<h2>Step 1: Where you at?</h2>
 	<form method="GET" action="/results">
-		<input type="text" name="zip" placeholder="Enter your zip code here...">
+		<input type="text" name="zip" placeholder="Zip code">
 	
-		<h2>Step 2: What's your budget ($ - $$$$$$)</h2>
-		<input type="text" name="price" placeholder="How much do you want to spend">	
+		<h2>Step 2: How much coin do you want to drop?</h2>
+		<input type="text" name="price" placeholder="On a scale of 0-4">	
 		<input type="submit">
 	</form>
-
-	<a href="users/<%= users.id%>/edit">Edit profile</a>
+	<a href="users/<%= user.id%>/edit">Edit profile</a>
 	<br>
 
 </body>

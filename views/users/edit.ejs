@@ -1,0 +1,14 @@
+<html>
+<head>
+	<title><%= users.name %></title>
+</head>
+<body>
+	<h1>Edit <%= users.name %></h1>
+	<form method="POST" action="/people/<%= person.id %>?_method=PATCH">
+		<input type="text" name="name" placeholder="Name" value="<%= user.name %>"><br>
+		<input type="text" name="email" placeholder="Email" value="<%= user.email %>"><br>
+		<input type="text" name="password" placeholder="Password" value="<%= user.password %>"><br>
+		<input type="submit">
+	</form>
+</body>
+</html>

@@ -4,11 +4,11 @@
 //===========================
 //START BOILERPLATE
 var express   		= require('express');
+var bodyParser 		= require('body-parser'); //used to append returned URL (all of the stuff after '?')
 var app				= express();
 var ejs 		  	= require('ejs'); //enables the use of embedded JS template (ejs) files
 
 var path			= require('path');
-var bodyParser 		= require('body-parser'); //used to append returned URL (all of the stuff after '?')
 var cookieParser 	= require('cookie-parser'); // 
 var session       	= require('express-session'); //session manager 
 var passport      	= require('passport'); //authentication
@@ -18,7 +18,7 @@ var db			  	= require('./db.js'); //links to DB
 var pg      	 	= require('pg');
 
 app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
+//app.set('views', path.join(__dirname, 'views'));
 app.use(methodOverride('_method'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
@@ -29,40 +29,8 @@ app.use(session({
   saveUninitialized: true
 }));
 
-ar localStrategy = new LocalStrategy(
-  function(username, password, done) {
-      findByUsername(username, function(err, user) {
-        if (err) { return done(err); }
-        if (!user) { return done(null, false, { message: 'Unknown user ' + username }); }
-        if (user.password != password) { return done(null, false, { message: 'Invalid password' }); }
-        return done(null, user);
-      })
-  }
-)
-
-passport.use(localStrategy);
-
-app.use(passport.initialize());
-app.use(passport.session());
-
-function findByUsername(username, fn) {
-  for (var i = 0, len = users.length; i < len; i++) {
-    var user = users[i];
-    if (user.username === username) {
-      return fn(null, user);
-    }
-  }
-  return fn(null, null);
-};
-
-function findById(id, fn) {
-  var idx = id - 1;
-  if (users[idx]) {
-    fn(null, users[idx]);
-  } else {
-    fn(new Error('User ' + id + ' does not exist'));
-  }
-};
+//===========================
+//Passport Boilerplate
 
 passport.serializeUser(function(user, done) {
   done(null, user.id);
@@ -76,83 +44,105 @@ passport.deserializeUser(function(id, done) {
 	});
 });
 
-
-
-
-
 app.listen(8080, function(){
 	console.log('Server running on PORT 8080.');
 });
 
-//DATABASE boilerplate
-db.config = {
-  database: "dinner", //database name: dinner
-  host: "localhost",
-  port: "5432"
-}
+var localStrategy = new LocalStrategy(
+	function(email, password, done) {
+		console.log('I got this far!');
 
-db.connect = function(callback) {
-  pg.connect(this.config, callback);
-}
+		db.query('SELECT * FROM users WHERE email = $1', [email], function(err, dbRes) {
+			var user = dbRes.rows[0];
+			console.log(email)
 
-db.query = function(statement, params, callback) {
-  this.connect(function(err, client, done){
-      client.query(statement, params, callback);
-    done();
-  })
-}
+			console.log(user);
+		//  function(username, password, done) {
+		//    findByUsername(username, function(err, user) {
+
+
+		    if (err) { return done(err); }
+		    if (!user) { return done(null, false, { message: 'Unknown user ' + email }); }
+		    if (user.password != password) { return done(null, false, { message: 'Invalid password' }); }
+		    return done(null, user);
+		});
+	}
+);
+passport.use(localStrategy);
+app.use(passport.initialize());
+app.use(passport.session());
 
 // ================
 // END BOILERPLATE
 
-
+// =====================================================================
 
 //index
 app.get('/', function(req, res) {
-	res.render('index')
+	res.render('index', { user: req.user })
 });
 
-//new routes below
-app.get('/main', function(req, res) {
-	res.render('main')
-});
-
-app.get('/signup', function(req, res){
+app.get('/users/new', function(req, res){
 	res.render('users/new')
 });
 
+// app.post('/sessions',
+//   passport.authenticate('local'),
+//   function(req, res) {
+//     // If this function gets called, authentication was successful.
+//     // `req.user` contains the authenticated user.
+//     res.redirect('/users/' + req.user.id);
+//   });
 
-app.post('/signup', function(req, res){
-	var username = req.body.username;
-	var email = req.body.email;
-	var password = req.body.password;
+app.post('/sessions', passport.authenticate('local', 
+  {failureRedirect: '/garbage'}), function(req, res) {
+    res.send('success!!!!');
+});
 
-	db.query('INSERT INTO users(username, email, password) VALUES ($1, $2, $3)', [req.body.username, req.body.email, req.body.password], function(err, dbRes){
-		//if sign-up is successful (no errors), then redirect to the homepage.
+app.post('/users', 
+	function(req, res){
+		db.query('INSERT INTO users (username, email, password) VALUES ($1, $2, $3)', [req.body.username, req.body.email, req.body.password], function(err, dbRes){
 			if(!err){
-				res.redirect('/main'); 
+				res.redirect('/'); 
 			} else {
 				res.send("Error")
 			}
-		});
+			}
+		);
+		// res.send('i got this far');
+	}
+);
+
+
+//main page-- once registered or logged in
+app.get('/main', function(req, res) {
+	// Get rid of var user and replace the ": user" with ": req.user" 
+	var user = {name: "TEST USER", id: 109409};
+	res.render('main', {user: user})
 });
 
-
+//return results
 app.get('/results', function(req, res){
-	var zip = req.query['postal_code'];
+	var zip = req.query['zip'];
+	var price = req.query['price'];
+	request('https://maps.googleapis.com/maps/api/place/textsearch/json?query=restaurants+in'+zip+'&key=AIzaSyDHS9pwkFM12gb1N0nM2sV8u6GzfI6OP3s&minprice='+price+'&maxprice='+price+'&open_now=true', function(error, response, body){
+		res.render('results'); //
+	});
+});
 
-})
-
-app.patch('/edit', function(req, res){
+//update user data
+app.patch('/users/:id', function(req, res){
 	db.query("UPDATE users SET username = $1, email = $2, password = $3 WHERE id = $4", 
 	[req.body.username, req.body.email, req.body.password, req.params.id], function(err, dbRes){
 		if(!err){
-			res.redirect('/users/' + req.params.id);
+			res.render('users/edit');
 		} else {
 			res.send('ERROR!');
 		}
 	});
 });
+
+
 
 //https://maps.googleapis.com/maps/api/place/textsearch/json?.........&key=AIzaSyDHS9pwkFM12gb1N0nM2sV8u6GzfI6OP3s
 

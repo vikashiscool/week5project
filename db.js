@@ -26,4 +26,3 @@ db.query = function(statement, params, callback){
 };
 
 module.exports = db;
-
